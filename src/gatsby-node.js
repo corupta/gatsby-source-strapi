@@ -45,7 +45,7 @@ exports.sourceNodes = async (
     authenticationActivity.end()
   }
 
-  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
+  let fetchActivity = reporter.activityTimer(`Fetching Strapi Data`)
   fetchActivity.start()
 
   // Generate a list of promises based on the `contentTypes` option.
@@ -62,6 +62,11 @@ exports.sourceNodes = async (
   // Execute the promises.
   let entities = await Promise.all(promises)
 
+  fetchActivity.end();
+  fetchActivity = reporter.activityTimer(`Fetching Media Files`);
+  fetchActivity.start();
+
+
   entities = await normalize.downloadMediaFiles({
     entities,
     apiURL,
@@ -71,6 +76,10 @@ exports.sourceNodes = async (
     touchNode,
     jwtToken,
   })
+
+  fetchActivity.end();
+  fetchActivity = reporter.activityTimer(`Creating graphql nodes`);
+  fetchActivity.start();
 
   contentTypes.forEach((contentType, i) => {
     const items = entities[i]
