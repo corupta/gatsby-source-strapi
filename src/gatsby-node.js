@@ -9,6 +9,7 @@ exports.sourceNodes = async (
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
+    beforeNodeCreate = null,
     loginData = {},
     queryLimit = 100,
   }
@@ -62,10 +63,9 @@ exports.sourceNodes = async (
   // Execute the promises.
   let entities = await Promise.all(promises)
 
-  fetchActivity.end();
-  fetchActivity = reporter.activityTimer(`Fetching Media Files`);
-  fetchActivity.start();
-
+  fetchActivity.end()
+  fetchActivity = reporter.activityTimer(`Fetching Media Files`)
+  fetchActivity.start()
 
   entities = await normalize.downloadMediaFiles({
     entities,
@@ -77,14 +77,17 @@ exports.sourceNodes = async (
     jwtToken,
   })
 
-  fetchActivity.end();
-  fetchActivity = reporter.activityTimer(`Creating graphql nodes`);
-  fetchActivity.start();
+  fetchActivity.end()
+  fetchActivity = reporter.activityTimer(`Creating graphql nodes`)
+  fetchActivity.start()
 
   contentTypes.forEach((contentType, i) => {
     const items = entities[i]
     items.forEach((item, i) => {
-      const node = Node(capitalize(contentType), item)
+      const node = Node(
+        capitalize(contentType),
+        beforeNodeCreate ? beforeNodeCreate(item, contentType) : item
+      )
       createNode(node)
     })
   })

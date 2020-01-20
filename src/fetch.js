@@ -23,8 +23,12 @@ module.exports = async ({
     }
   }
 
-  // Make API request.
-  const documents = await axios(apiEndpoint, fetchRequestConfig)
+  const documents = await axios(apiEndpoint, fetchRequestConfig).catch(
+    error => {
+      reporter.info(`Error when fetching via ${apiEndpoint} ${error.message}`)
+      throw error
+    }
+  )
 
   // Map and clean data.
   return documents.data.map(item => clean(item))
@@ -44,16 +48,16 @@ const clean = item => {
       delete item[key]
       item[key.slice(1)] = value
     } else if (includes(key, '__')) {
-      let [name, locale] = key.split('__');
+      let [name, locale] = key.split('__')
       if (!item[name]) {
-        item[name] = [];
+        item[name] = []
       }
       item[name].push({
         value,
-        locale
-      });
-      delete item[key];
-    } else if(isObject(value)) {
+        locale,
+      })
+      delete item[key]
+    } else if (isObject(value)) {
       item[key] = clean(value)
     }
   })
