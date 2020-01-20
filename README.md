@@ -16,7 +16,7 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       queryLimit: 1000, // Default to 100
-      beforeNodeCreate: (item, contentType) => item, // default to null
+      preprocessNodes: (allEntities) => undefined, // default to null
       contentTypes: [`article`, `user`],
       // Possibility to login with a strapi user, when content types are not publically available (optional).
       loginData: {

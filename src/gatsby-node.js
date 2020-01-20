@@ -9,7 +9,7 @@ exports.sourceNodes = async (
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
-    beforeNodeCreate = null,
+    preprocessNodes = null,
     loginData = {},
     queryLimit = 100,
   }
@@ -81,13 +81,22 @@ exports.sourceNodes = async (
   fetchActivity = reporter.activityTimer(`Creating graphql nodes`)
   fetchActivity.start()
 
+  const allEntities = contentTypes.reduce(
+    (acc, contentType, i) => ({
+      ...acc,
+      [contentType]: entities[i],
+    }),
+    {}
+  )
+
+  if (preprocessNodes) {
+    preprocessNodes(allEntities)
+  }
+
   contentTypes.forEach((contentType, i) => {
-    const items = entities[i]
+    const items = allEntities[i]
     items.forEach((item, i) => {
-      const node = Node(
-        capitalize(contentType),
-        beforeNodeCreate ? beforeNodeCreate(item, contentType) : item
-      )
+      const node = Node(capitalize(contentType), item)
       createNode(node)
     })
   })
