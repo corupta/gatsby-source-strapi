@@ -29,11 +29,11 @@ const extractFields = async (
 
     // If we don't have cached data, download the file
     if (!fileNodeID) {
+      // full media url
+      const source_url = `${item.url.startsWith('http') ? '' : apiURL}${
+        item.url
+      }`
       try {
-        // full media url
-        const source_url = `${item.url.startsWith('http') ? '' : apiURL}${
-          item.url
-        }`
         const fileNode = await createRemoteFileNode({
           url: source_url,
           cache,
@@ -53,6 +53,7 @@ const extractFields = async (
           })
         }
       } catch (e) {
+        reporter.error(`Failed to fetch file from ${source_url} ${e}`)
         // Ignore
       }
     }
