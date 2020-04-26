@@ -1,6 +1,6 @@
 {
-  "name": "gatsby-source-strapi",
-  "version": "0.0.12",
+  "name": "gatsby-source-strapi-local-fields",
+  "version": "0.0.24",
   "lockfileVersion": 1,
   "requires": true,
   "dependencies": {
