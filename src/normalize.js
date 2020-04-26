@@ -1,8 +1,8 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
 
 const extractFields = async (
+  reporter,
   apiURL,
-  store,
   cache,
   createNode,
   createNodeId,
@@ -36,7 +36,6 @@ const extractFields = async (
         }`
         const fileNode = await createRemoteFileNode({
           url: source_url,
-          store,
           cache,
           createNode,
           createNodeId,
@@ -65,11 +64,11 @@ const extractFields = async (
       item.localFile___NODE = fileNodeID
     }
   } else if (Array.isArray(item)) {
-    await Promise.all(
+    return await Promise.all(
       item.map(async f =>
         extractFields(
+          reporter,
           apiURL,
-          store,
           cache,
           createNode,
           createNodeId,
@@ -80,25 +79,27 @@ const extractFields = async (
       )
     )
   } else if (item && typeof item === 'object') {
-    for (const key of Object.keys(item)) {
-      const field = item[key]
+    return await Promise.all(
+      Object.keys(item).map(async key => {
+        const field = item[key]
 
-      const fileNodeID = await extractFields(
-        apiURL,
-        store,
-        cache,
-        createNode,
-        createNodeId,
-        touchNode,
-        auth,
-        field,
-        key
-      )
+        const fileNodeID = await extractFields(
+          reporter,
+          apiURL,
+          cache,
+          createNode,
+          createNodeId,
+          touchNode,
+          auth,
+          field,
+          key
+        )
 
-      if (fileNodeID) {
-        item[`${key}___NODE`] = fileNodeID
-      }
-    }
+        if (fileNodeID) {
+          item[`${key}___NODE`] = fileNodeID
+        }
+      })
+    )
   }
 }
 
@@ -107,7 +108,6 @@ exports.downloadMediaFiles = async ({
   entities,
   types,
   apiURL,
-  store,
   cache,
   createNode,
   createNodeId,
@@ -115,7 +115,6 @@ exports.downloadMediaFiles = async ({
   jwtToken: auth,
   fetchActivity,
   reporter,
-  concurrentMediaDownloadsPerType,
 }) =>
   Promise.all(
     entities.map(async (entity, index) => {
@@ -127,31 +126,21 @@ exports.downloadMediaFiles = async ({
         { parentSpan: fetchActivity.span }
       )
       subfetchActivity.start()
-      let itemIndex = 0
-      const next = async () => {
-        if (itemIndex >= entity.length) {
-          return
-        }
-        const item = entity[itemIndex]
-        ++itemIndex
-        await extractFields(
-          apiURL,
-          store,
-          cache,
-          createNode,
-          createNodeId,
-          touchNode,
-          auth,
-          item
-        )
-        subfetchActivity.tick()
-        return next()
-      }
-      const promises = []
-      for (let i = 0; i < concurrentMediaDownloadsPerType; ++i) {
-        promises.push(next())
-      }
-      await Promise.all(promises)
+      await Promise.all(
+        entity.map(async item => {
+          await extractFields(
+            reporter,
+            apiURL,
+            cache,
+            createNode,
+            createNodeId,
+            touchNode,
+            auth,
+            item
+          )
+          subfetchActivity.tick()
+        })
+      )
       subfetchActivity.done()
       fetchActivity.tick()
       return entity

@@ -6,7 +6,7 @@ import normalize from './normalize'
 import authentication from './authentication'
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes },
+  { actions, cache, reporter, getNode, getNodes },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -14,7 +14,6 @@ exports.sourceNodes = async (
     preprocessNodes = null,
     loginData = {},
     queryLimit = 100,
-    concurrentMediaDownloadsPerType = 50,
   }
 ) => {
   const { createNode, deleteNode, touchNode } = actions
@@ -75,14 +74,12 @@ exports.sourceNodes = async (
     entities,
     types,
     apiURL,
-    store,
     cache,
     createNode,
     touchNode,
     jwtToken,
     fetchActivity,
     reporter,
-    concurrentMediaDownloadsPerType,
   })
 
   fetchActivity.done()
