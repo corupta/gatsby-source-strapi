@@ -39,7 +39,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "gatsby-node-helpers": "^0.3.0",
-    "gatsby-source-filesystem-got8": "^2.2.6",
+    "gatsby-source-filesystem": "npm:gatsby-source-filesystem-got8@^2.2.6",
     "lodash": "^4.17.11",
     "pluralize": "^7.0.0"
   },
