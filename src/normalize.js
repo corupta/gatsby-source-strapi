@@ -68,7 +68,7 @@ const extractFields = async (
       item.localFile___NODE = fileNodeID
     }
   } else if (Array.isArray(item)) {
-    return await Promise.all(
+    await Promise.all(
       item.map(async f =>
         extractFields(
           reporter,
@@ -84,7 +84,7 @@ const extractFields = async (
       )
     )
   } else if (item && typeof item === 'object') {
-    return await Promise.all(
+    await Promise.all(
       Object.keys(item).map(async key => {
         const field = item[key]
 
