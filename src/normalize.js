@@ -1,4 +1,4 @@
-const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
+const { createRemoteFileNode } = require(`gatsby-source-filesystem-got8`)
 
 const extractFields = async (
   reporter,
