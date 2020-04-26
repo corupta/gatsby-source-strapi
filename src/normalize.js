@@ -117,7 +117,7 @@ exports.downloadMediaFiles = async ({
 }) =>
   Promise.all(
     entities.map(async (entity, index) => {
-      const contentType = entity[index]
+      const contentType = contentTypes[index]
       const subfetchActivity = reporter.createProgress(
         `Fetching Media Files of ${contentType}`,
         entity.length,
