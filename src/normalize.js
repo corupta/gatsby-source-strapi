@@ -114,6 +114,7 @@ exports.downloadMediaFiles = async ({
   jwtToken: auth,
   fetchActivity,
   reporter,
+  concurrentMediaDownloadsPerType,
 }) =>
   Promise.all(
     entities.map(async (entity, index) => {
@@ -125,8 +126,13 @@ exports.downloadMediaFiles = async ({
         { parentSpan: fetchActivity.span }
       )
       subfetchActivity.start()
-      for (let item of entity) {
-        // loop item over fields
+      let itemIndex = 0
+      const next = async () => {
+        if (itemIndex >= entity.length) {
+          return
+        }
+        const item = entity[itemIndex]
+        ++itemIndex
         await extractFields(
           apiURL,
           store,
@@ -138,7 +144,13 @@ exports.downloadMediaFiles = async ({
           item
         )
         subfetchActivity.tick()
+        return next()
       }
+      const promises = []
+      for (let i = 0; i < concurrentMediaDownloadsPerType; ++i) {
+        promises.push(next())
+      }
+      await Promise.all(promises)
       subfetchActivity.done()
       fetchActivity.tick()
       return entity
