@@ -19,6 +19,8 @@ plugins: [
       concurrentMediaDownloadsPerType: 100, // Default to 50
       preprocessNodes: (allEntities) => undefined, // default to null
       contentTypes: [`article`, `user`],
+      //If using single types place them in this array.
+      singleTypes: [`home-page`, `contact`],
       // Possibility to login with a strapi user, when content types are not publically available (optional).
       loginData: {
         identifier: "",

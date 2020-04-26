@@ -1,8 +1,10 @@
 *.log
-/fetch.js
-/gatsby-node.js
-/nodes.js
-/normalize.js
 /yarn.lock
+/package-lock.json
 node_modules
 .idea
+/authentication.js
+/fetch.js
+/normalize.js
+/gatsby-node.js
+/nodes.js
