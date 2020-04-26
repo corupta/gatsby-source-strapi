@@ -16,6 +16,7 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       queryLimit: 1000, // Default to 100
+      concurrentMediaDownloadsPerType: 100, // Default to 50
       preprocessNodes: (allEntities) => undefined, // default to null
       contentTypes: [`article`, `user`],
       // Possibility to login with a strapi user, when content types are not publically available (optional).
