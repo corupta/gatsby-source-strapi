@@ -40,6 +40,7 @@ const extractFields = async (
           createNode,
           createNodeId,
           auth,
+          reporter,
         })
 
         // If we don't have cached data, download the file
