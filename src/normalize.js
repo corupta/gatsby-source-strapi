@@ -105,6 +105,7 @@ const extractFields = async (
 // Downloads media from image type fields
 exports.downloadMediaFiles = async ({
   entities,
+  types,
   apiURL,
   store,
   cache,
@@ -112,11 +113,27 @@ exports.downloadMediaFiles = async ({
   createNodeId,
   touchNode,
   jwtToken: auth,
+  fetchActivity,
+  reporter,
+  concurrentMediaDownloadsPerType,
 }) =>
   Promise.all(
-    entities.map(async entity => {
-      for (let item of entity) {
-        // loop item over fields
+    entities.map(async (entity, index) => {
+      const type = types[index]
+      const subfetchActivity = reporter.createProgress(
+        `Fetching Media Files of ${type}`,
+        entity.length,
+        0,
+        { parentSpan: fetchActivity.span }
+      )
+      subfetchActivity.start()
+      let itemIndex = 0
+      const next = async () => {
+        if (itemIndex >= entity.length) {
+          return
+        }
+        const item = entity[itemIndex]
+        ++itemIndex
         await extractFields(
           apiURL,
           store,
@@ -127,7 +144,16 @@ exports.downloadMediaFiles = async ({
           auth,
           item
         )
+        subfetchActivity.tick()
+        return next()
       }
+      const promises = []
+      for (let i = 0; i < concurrentMediaDownloadsPerType; ++i) {
+        promises.push(next())
+      }
+      await Promise.all(promises)
+      subfetchActivity.done()
+      fetchActivity.tick()
       return entity
     })
   )

@@ -11,8 +11,10 @@ exports.sourceNodes = async (
     apiURL = 'http://localhost:1337',
     contentTypes = [],
     singleTypes = [],
+    preprocessNodes = null,
     loginData = {},
     queryLimit = 100,
+    concurrentMediaDownloadsPerType = 50,
   }
 ) => {
   const { createNode, deleteNode, touchNode } = actions
@@ -21,30 +23,37 @@ exports.sourceNodes = async (
   let jwtToken = await authentication({ loginData, reporter, apiURL })
 
   // Start activity, Strapi data fetching
-  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
+  let fetchActivity = reporter.createProgress(
+    `Fetching Strapi Data`,
+    contentTypes.length + singleTypes.length
+  )
   fetchActivity.start()
 
   // Generate a list of promises based on the `contentTypes` option.
-  const contentTypePromises = contentTypes.map(contentType =>
-    fetchData({
+  const contentTypePromises = contentTypes.map(async contentType => {
+    const entity = await fetchData({
       apiURL,
       contentType,
       jwtToken,
       queryLimit,
       reporter,
     })
-  )
+    fetchActivity.tick()
+    return entity
+  })
 
   // Generate a list of promises based on the `singleTypes` option.
-  const singleTypePromises = singleTypes.map(singleType =>
-    fetchData({
+  const singleTypePromises = singleTypes.map(async singleType => {
+    const entity = await fetchData({
       apiURL,
       singleType,
       jwtToken,
       queryLimit,
       reporter,
     })
-  )
+    fetchActivity.tick()
+    return entity
+  })
 
   // Execute the promises
   let entities = await Promise.all([
@@ -52,16 +61,48 @@ exports.sourceNodes = async (
     ...singleTypePromises,
   ])
 
+  const types = [...contentTypes, ...singleTypes]
+
+  fetchActivity.done()
+  fetchActivity = reporter.createProgress(
+    `Fetching Media Files of All Types`,
+    entities.length
+  )
+  fetchActivity.start()
+
   // Creating files
   entities = await normalize.downloadMediaFiles({
     entities,
+    types,
     apiURL,
     store,
     cache,
     createNode,
     touchNode,
     jwtToken,
+    fetchActivity,
+    reporter,
+    concurrentMediaDownloadsPerType,
   })
+
+  fetchActivity.done()
+  fetchActivity = reporter.createProgress(
+    `Creating graphql nodes of All Types`,
+    contentTypes.length
+  )
+  fetchActivity.start()
+
+  const allEntities = types.reduce(
+    (acc, type, i) => ({
+      ...acc,
+      [type]: entities[i],
+    }),
+    {}
+  )
+
+  if (preprocessNodes) {
+    preprocessNodes(allEntities)
+  }
 
   // new created nodes
   let newNodes = []
@@ -77,16 +118,26 @@ exports.sourceNodes = async (
   })
 
   // Merge single and content types and retrieve create nodes
-  contentTypes.concat(singleTypes).forEach((contentType, i) => {
-    const items = entities[i]
+  types.forEach((type, i) => {
+    const items = allEntities[type]
+    const subfetchActivity = reporter.createProgress(
+      `Creating graphql nodes for ${type}`,
+      items.length,
+      0,
+      { parentSpan: fetchActivity.span }
+    )
+    subfetchActivity.start()
     items.forEach((item, i) => {
-      const node = Node(capitalize(contentType), item)
+      const node = Node(capitalize(type), item)
       // Adding new created nodes in an Array
       newNodes.push(node)
 
       // Create nodes
       createNode(node)
+      subfetchActivity.tick()
     })
+    subfetchActivity.done()
+    fetchActivity.tick()
   })
 
   // Make a diff array between existing nodes and new ones
@@ -99,5 +150,5 @@ exports.sourceNodes = async (
     deleteNode({ node: getNode(data.id) })
   })
 
-  fetchActivity.end()
+  fetchActivity.done()
 }

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { isObject, startsWith, forEach } from 'lodash'
+import { isObject, startsWith, forEach, includes } from 'lodash'
 import pluralize from 'pluralize'
 
 module.exports = async ({
@@ -27,8 +27,12 @@ module.exports = async ({
     }
   }
 
-  // Make API request.
-  const documents = await axios(apiEndpoint, fetchRequestConfig)
+  const documents = await axios(apiEndpoint, fetchRequestConfig).catch(
+    error => {
+      reporter.info(`Error when fetching via ${apiEndpoint} ${error.message}`)
+      throw error
+    }
+  )
 
   // Make sure response is an array for single type instances
   const response = Array.isArray(documents.data)
@@ -52,6 +56,16 @@ const clean = item => {
     } else if (startsWith(key, `_`)) {
       delete item[key]
       item[key.slice(1)] = value
+    } else if (includes(key, '__')) {
+      let [name, locale] = key.split('__')
+      if (!item[name]) {
+        item[name] = []
+      }
+      item[name].push({
+        value,
+        locale,
+      })
+      delete item[key]
     } else if (isObject(value)) {
       item[key] = clean(value)
     }
