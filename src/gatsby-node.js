@@ -12,6 +12,7 @@ exports.sourceNodes = async (
     preprocessNodes = null,
     loginData = {},
     queryLimit = 100,
+    concurrentMediaDownloadsPerType = 50,
   }
 ) => {
   const { createNode, touchNode } = boundActionCreators
@@ -86,6 +87,7 @@ exports.sourceNodes = async (
     jwtToken,
     fetchActivity,
     reporter,
+    concurrentMediaDownloadsPerType,
   })
 
   fetchActivity.done()
