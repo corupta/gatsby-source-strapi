@@ -3,6 +3,7 @@ const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
 const extractFields = async (
   reporter,
   apiURL,
+  store,
   cache,
   createNode,
   createNodeId,
@@ -36,6 +37,7 @@ const extractFields = async (
       try {
         const fileNode = await createRemoteFileNode({
           url: source_url,
+          store,
           cache,
           createNode,
           createNodeId,
@@ -71,6 +73,7 @@ const extractFields = async (
         extractFields(
           reporter,
           apiURL,
+          store,
           cache,
           createNode,
           createNodeId,
@@ -88,6 +91,7 @@ const extractFields = async (
         const fileNodeID = await extractFields(
           reporter,
           apiURL,
+          store,
           cache,
           createNode,
           createNodeId,
@@ -110,6 +114,7 @@ exports.downloadMediaFiles = async ({
   entities,
   types,
   apiURL,
+  store,
   cache,
   createNode,
   createNodeId,
@@ -133,6 +138,7 @@ exports.downloadMediaFiles = async ({
           await extractFields(
             reporter,
             apiURL,
+            store,
             cache,
             createNode,
             createNodeId,

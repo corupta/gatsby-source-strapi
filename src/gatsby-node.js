@@ -6,7 +6,7 @@ import normalize from './normalize'
 import authentication from './authentication'
 
 exports.sourceNodes = async (
-  { actions, cache, reporter, createNodeId, getNode, getNodes },
+  { store, actions, cache, reporter, createNodeId, getNode, getNodes },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -74,6 +74,7 @@ exports.sourceNodes = async (
     entities,
     types,
     apiURL,
+    store,
     cache,
     createNode,
     createNodeId,
