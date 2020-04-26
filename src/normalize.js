@@ -104,6 +104,7 @@ const extractFields = async (
 // Downloads media from image type fields
 exports.downloadMediaFiles = async ({
   entities,
+  contentTypes,
   apiURL,
   store,
   cache,
@@ -111,9 +112,19 @@ exports.downloadMediaFiles = async ({
   createNodeId,
   touchNode,
   jwtToken: auth,
+  fetchActivity,
+  reporter,
 }) =>
   Promise.all(
-    entities.map(async entity => {
+    entities.map(async (entity, index) => {
+      const contentType = entity[index]
+      const subfetchActivity = reporter.createProgress(
+        `Fetching Media Files of ${contentType}`,
+        entity.length,
+        0,
+        { parentSpan: fetchActivity.span }
+      )
+      subfetchActivity.start()
       for (let item of entity) {
         // loop item over fields
         await extractFields(
@@ -126,7 +137,10 @@ exports.downloadMediaFiles = async ({
           auth,
           item
         )
+        subfetchActivity.tick()
       }
+      subfetchActivity.done()
+      fetchActivity.tick()
       return entity
     })
   )

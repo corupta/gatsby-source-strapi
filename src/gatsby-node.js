@@ -46,39 +46,53 @@ exports.sourceNodes = async (
     authenticationActivity.end()
   }
 
-  let fetchActivity = reporter.activityTimer(`Fetching Strapi Data`)
+  let fetchActivity = reporter.createProgress(
+    `Fetching Strapi Data`,
+    contentTypes.length
+  )
   fetchActivity.start()
 
   // Generate a list of promises based on the `contentTypes` option.
-  const promises = contentTypes.map(contentType =>
-    fetchData({
+  const promises = contentTypes.map(async contentType => {
+    const entity = await fetchData({
       apiURL,
       contentType,
       jwtToken,
       queryLimit,
       reporter,
     })
-  )
+    fetchActivity.tick()
+    return entity
+  })
 
   // Execute the promises.
   let entities = await Promise.all(promises)
 
-  fetchActivity.end()
-  fetchActivity = reporter.activityTimer(`Fetching Media Files`)
+  fetchActivity.done()
+  fetchActivity = reporter.createProgress(
+    `Fetching Media Files of All Types`,
+    entities.length
+  )
   fetchActivity.start()
 
   entities = await normalize.downloadMediaFiles({
     entities,
+    contentTypes,
     apiURL,
     store,
     cache,
     createNode,
     touchNode,
     jwtToken,
+    fetchActivity,
+    reporter,
   })
 
-  fetchActivity.end()
-  fetchActivity = reporter.activityTimer(`Creating graphql nodes`)
+  fetchActivity.done()
+  fetchActivity = reporter.createProgress(
+    `Creating graphql nodes of All Types`,
+    contentTypes.length
+  )
   fetchActivity.start()
 
   const allEntities = contentTypes.reduce(
@@ -95,11 +109,21 @@ exports.sourceNodes = async (
 
   contentTypes.forEach((contentType, i) => {
     const items = allEntities[contentType]
+    const subfetchActivity = reporter.createProgress(
+      `Creating graphql nodes for ${contentType}`,
+      items.length,
+      0,
+      { parentSpan: fetchActivity.span }
+    )
+    subfetchActivity.start()
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
       createNode(node)
+      subfetchActivity.tick()
     })
+    subfetchActivity.done()
+    fetchActivity.tick()
   })
 
-  fetchActivity.end()
+  fetchActivity.done()
 }
